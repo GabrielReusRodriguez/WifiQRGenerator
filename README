@@ -1,0 +1,5 @@
+wifiQRGenerator
+**************
+
+wifi2QR -w <wifi_name> -p <wifi_pass> -t <wifi_Authentication_Type> [WEP|WPA|nopass] -o -f <Ruta_qr>
+
