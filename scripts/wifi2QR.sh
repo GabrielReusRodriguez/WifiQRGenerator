@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
-source /opt/venv/bin/activate
-python3 /opt/venv/apps/WifiQRGenerator/src/wifi2QR.py $@
-deactivate
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+source "${SCRIPT_DIR}/config.cfg"
+
+ `${PYTHON_INTERPETER} ${HOME_FOLDER}/src/wifi2QR.py`
