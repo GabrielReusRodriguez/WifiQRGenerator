@@ -1,76 +1,96 @@
 #!/usr/bin/env python3
 
-#import wifi_qrcode_generator as qr
-from WiFiQRGen import WifiSecurity, WifiEapMethod, WifiPhase2Auth, WifiNetworkSettings
-import sys, getopt
+import getopt
+import sys
 
-#Constants....
-PROGRAM_NAME ="wifi2QR" 
+PROGRAM_NAME = "wifi2QR"
+USAGE = f"{PROGRAM_NAME} -w <wifi_name> -p <wifi_pass> -t <wifi_Authentication_Type> [WEP|WPA|nopass] -o -f <Ruta_qr>"
 
-#Inits....
-wifi_name = None
-wifi_pass = None
-outputFile = None
-wifi_auth_Type = None
-wifi_hidden = False
 
-argv = sys.argv[1:]
-#print (str(argv))
-
-#Functions...
 def securityFactory(arg: str):
-	if arg == "WEP":
-		return WifiSecurity.WEP
-	elif arg == "WPA":
-		return WifiSecurity.WPA
-	else:
-		return WifiSecurity.NONE
+    from WiFiQRGen import WifiSecurity
+
+    if arg == "WEP":
+        return WifiSecurity.WEP
+    if arg == "WPA":
+        return WifiSecurity.WPA
+    return WifiSecurity.NONE
 
 
-#main...
-try:
-	#opts, args = getopt.getopt(argv,"hw:p:t:o:",["ifile=","ofile="])
-	opts, args = getopt.getopt(argv,"hw:p:t:of:",["wifiName=","wifiPass=","wifiAuth=","wifiHidden=","oFile="])
-except getopt.GetoptError:
-		#print ("wifiQRGenerator.py -w <wifi_name> -p <wifi_pass> -t <wifi_Authentication_Type> [WEP|WPA|nopass] -f <Ruta_qr>")
-		print (f"{PROGRAM_NAME} -w <wifi_name> -p <wifi_pass> -t <wifi_Authentication_Type> [WEP|WPA|nopass] -f <Ruta_qr>")
-		sys.exit(2)
-for opt, arg in opts:
-	if opt == '-h':
-		print (f"{PROGRAM_NAME} -w <wifi_name> -p <wifi_pass> -t <wifi_Authentication_Type> [WEP|WPA|nopass] -o -f <Ruta_qr>")
-		sys.exit()
-	elif opt in ("-w", "--wifiName"):
-		wifi_name = arg
-	elif opt in ("-p", "--wifiPass"):
-		#WPA, WEP, nopass
-		wifi_pass = arg
-	elif opt in ("-t","--wifiAuth"):
-		wifi_auth_Type = securityFactory(arg)
-	elif opt in ("-o","--wifiHidden"):
-		wifi_hidden = True
-	elif opt in ("-f","--oFile"):
-		outputFile = arg
+def parse_args(argv):
+    wifi_name = None
+    wifi_pass = None
+    output_file = "./qr.png"
+    wifi_auth_type = None
+    wifi_hidden = False
 
-if ( wifi_auth_Type is None):
-	wifi_auth_Type = "nopass" # WEP
-if ( wifi_name is None ):
-	print (f"Error - Falta por informar el nombre de la wifi")
-	sys.exit()
-if ( wifi_pass is None ):
-	wifi_auth_Type = WifiSecurity.NONE
-if ( outputFile is None ):
-	outputFile = "./qr.png"
+    try:
+        opts, _ = getopt.getopt(
+            argv,
+            "hw:p:t:of:",
+            ["wifiName=", "wifiPass=", "wifiAuth=", "wifiHidden=", "oFile="],
+        )
+    except getopt.GetoptError as exc:
+        raise ValueError(USAGE) from exc
 
-wifi_settings = WifiNetworkSettings(
-	ssid		= wifi_name,
-	password	= wifi_pass,
-	security 	= wifi_auth_Type,
-	#security=WifiSecurity.WPA2,
-	#eap_method=WifiEapMethod.PEAP,
-	#phase_2_auth=WifiPhase2Auth.MSCHAPV2,
-	hidden		= wifi_hidden
-	#identity="MyUsername"
-)
-#qrImage =  wifi_settings.generate_qrcode('path/to/logo.png')
-qrImage =  wifi_settings.generate_qrcode()
-qrImage.save(outputFile)
+    for opt, arg in opts:
+        if opt == "-h":
+            raise SystemExit(0)
+        if opt in ("-w", "--wifiName"):
+            wifi_name = arg
+        elif opt in ("-p", "--wifiPass"):
+            wifi_pass = arg
+        elif opt in ("-t", "--wifiAuth"):
+            wifi_auth_type = securityFactory(arg)
+        elif opt in ("-o", "--wifiHidden"):
+            wifi_hidden = True
+        elif opt in ("-f", "--oFile"):
+            output_file = arg
+
+    if wifi_name is None:
+        raise ValueError("Error - Falta por informar el nombre de la wifi")
+
+    if wifi_auth_type is None or wifi_pass is None:
+        wifi_auth_type = securityFactory("nopass")
+
+    return {
+        "ssid": wifi_name,
+        "password": wifi_pass,
+        "security": wifi_auth_type,
+        "hidden": wifi_hidden,
+        "output_file": output_file,
+    }
+
+
+def generate_qr(settings):
+    from WiFiQRGen import WifiNetworkSettings
+
+    wifi_settings = WifiNetworkSettings(
+        ssid=settings["ssid"],
+        security=settings["security"],
+        hidden=settings["hidden"],
+        **{"password": settings["password"]},
+    )
+    qr_image = wifi_settings.generate_qrcode()
+    qr_image.save(settings["output_file"])
+
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    try:
+        settings = parse_args(argv)
+    except SystemExit:
+        print(USAGE)
+        return 0
+    except ValueError as exc:
+        print(str(exc))
+        if str(exc) == USAGE:
+            return 2
+        return 1
+
+    generate_qr(settings)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

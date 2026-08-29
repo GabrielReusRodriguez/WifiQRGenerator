@@ -1,5 +1,57 @@
-wifiQRGenerator
-**************
+# WifiQRGenerator
 
-wifi2QR -w <wifi_name> -p <wifi_pass> -t <wifi_Authentication_Type> [WEP|WPA|nopass] -o -f <Ruta_qr>
+Generador de códigos QR para redes WiFi desde línea de comandos.
 
+## Requisitos
+
+- Python 3.10+
+- pip
+
+## Instalación
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+También puedes usar el script existente:
+
+```bash
+bash scripts/installEnv.sh
+```
+
+## Uso
+
+```bash
+python3 src/wifi2QR.py -w <wifi_name> -p <wifi_pass> -t <wifi_auth> -o -f <ruta_salida>
+```
+
+### Parámetros
+
+- `-w`, `--wifiName`: nombre de la red WiFi (obligatorio)
+- `-p`, `--wifiPass`: contraseña WiFi (opcional para redes abiertas)
+- `-t`, `--wifiAuth`: tipo de seguridad (`WEP`, `WPA`, `nopass`)
+- `-o`, `--wifiHidden`: marca la red como oculta
+- `-f`, `--oFile`: ruta del archivo de salida (por defecto `./qr.png`)
+
+### Ejemplos
+
+```bash
+# Red WPA visible
+python3 src/wifi2QR.py -w MiWifi -p MiClave -t WPA -f ./miwifi.png
+
+# Red abierta y oculta
+python3 src/wifi2QR.py -w Invitados -o -f ./invitados.png
+```
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+## CI
+
+El repositorio incluye un workflow de GitHub Actions en `.github/workflows/ci.yml` que ejecuta los tests en cada `push` y `pull_request`.
